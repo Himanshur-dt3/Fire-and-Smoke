@@ -1,0 +1,16 @@
+.env
+.env.local
+.venv/
+operator-dashboard/node_modules/
+operator-dashboard/.next/
+operator-dashboard/coverage/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+runtime/
+models/
+*.pt
+*.onnx
+*.engine
+*.db
+.DS_Store

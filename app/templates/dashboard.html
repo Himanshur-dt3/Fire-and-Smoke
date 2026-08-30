@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Renewi Fire &amp; Smoke Monitor</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-poll-interval="{{ poll_interval_ms }}">
+  <header class="topbar">
+    <div><p class="eyebrow">Renewi POC</p><h1>Fire &amp; Smoke Monitor</h1></div>
+    <div class="operator"><span>Signed in as {{ user.username }}</span><button id="logout-button" class="secondary">Sign out</button></div>
+  </header>
+  <main>
+    <section class="boundary" aria-label="POC limitation">
+      <strong>POC boundary:</strong> This workflow processes authorised uploads only. It does not connect to live Renewi CCTV, replace fire-safety systems, establish site-specific performance, or confirm licensing clearance.
+    </section>
+
+    <section class="grid metrics" aria-label="Operational summary">
+      <article><span>Active alerts</span><strong id="active-count">0</strong></article>
+      <article><span>Smoke events</span><strong id="smoke-count">0</strong></article>
+      <article><span>Fire events</span><strong id="fire-count">0</strong></article>
+      <article><span>Replay / processing</span><strong id="run-count">0</strong></article>
+    </section>
+
+    <section class="panel">
+      <h2>Configured model readiness</h2>
+      <div id="model-readiness" class="readiness">Checking model configuration…</div>
+      <p class="muted">Only configured local compatible D-Fire or Pyronear weights can process media. The application never creates simulated AI detections.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Upload authorised media</h2>
+      <form id="upload-form">
+        <label>Logical camera identifier<input id="camera-identifier" required maxlength="128" placeholder="CAM-01"></label>
+        <label>Image or video<input id="media-file" type="file" required accept="image/jpeg,image/png,video/mp4,video/quicktime,video/x-msvideo"></label>
+        <label>Model<select id="model-id"><option value="dfire">D-Fire</option><option value="pyronear">Pyronear</option></select></label>
+        <label class="checkbox"><input id="replay-mode" type="checkbox"> Replay video with simulated-live pacing</label>
+        <button type="submit">Upload and queue real inference</button>
+      </form>
+      <p id="upload-status" role="status" class="muted">No media queued.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Active alerts</h2>
+      <div id="active-alerts" class="cards"><p class="muted">No active alerts.</p></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading"><h2>Event history</h2><label>Filter type<select id="event-filter"><option value="">All types</option><option value="SMOKE_DETECTED">Smoke</option><option value="FIRE_DETECTED">Fire</option></select></label></div>
+      <div class="table-wrap"><table><thead><tr><th>Time</th><th>Type</th><th>Camera</th><th>Confidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="event-history"></tbody></table></div>
+    </section>
+
+    <section class="panel evidence-panel" id="event-detail" hidden>
+      <h2>Alert evidence</h2>
+      <div id="event-detail-content"></div>
+    </section>
+  </main>
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>
