@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { BackendRequestError, backendRequest } from "../lib/backend";
 import type { EvaluationResponse } from "../lib/types";
 
 /**
  * PUBLIC_INTERFACE
- * Creates a backend evaluation record from real run identifiers and displays only returned source-supported metrics.
+ * Creates a backend evaluation record from real run identifiers and displays persisted evaluation history with source-supported metrics.
  */
 export function EvaluationPanel() {
   const [name, setName] = useState("");
@@ -16,8 +16,22 @@ export function EvaluationPanel() {
   const [labelSummary, setLabelSummary] = useState("");
   const [notes, setNotes] = useState("");
   const [result, setResult] = useState<EvaluationResponse | null>(null);
+  const [history, setHistory] = useState<EvaluationResponse[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const response = await backendRequest<{ items: EvaluationResponse[] }>("/api/evaluations");
+      setHistory(response.items ?? []);
+    } catch {
+      // Evaluation history optional load
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,11 +79,37 @@ export function EvaluationPanel() {
         true
       );
       setResult(response);
-      setMessage("Evaluation record saved. Metrics remain unavailable unless supported by supplied labels.");
+      setMessage("Evaluation record saved.");
+      await loadHistory();
     } catch (error) {
       setMessage(error instanceof BackendRequestError || error instanceof Error ? error.message : "Unable to create evaluation.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  function applyPreset(preset: "negative" | "positive") {
+    if (preset === "negative") {
+      setLabelSummary(JSON.stringify({ is_negative: true }, null, 2));
+      if (!name) {
+        setName("Negative Footage Evaluation");
+      }
+    } else {
+      setLabelSummary(
+        JSON.stringify(
+          {
+            true_positives: 1,
+            false_positives: 0,
+            false_negatives: 0,
+            onset_seconds: 2.0
+          },
+          null,
+          2
+        )
+      );
+      if (!name) {
+        setName("Labelled Model Benchmark");
+      }
     }
   }
 
@@ -104,19 +144,30 @@ export function EvaluationPanel() {
           />
         </label>
 
-        <label htmlFor="evaluation-label-summary">
-          Label summary JSON (optional)
+        <div>
+          <div className="section-heading">
+            <label htmlFor="evaluation-label-summary">Label summary JSON (optional)</label>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="secondary" onClick={() => applyPreset("negative")} type="button">
+                Preset: Negative Clip
+              </button>
+              <button className="secondary" onClick={() => applyPreset("positive")} type="button">
+                Preset: Labelled Onset
+              </button>
+            </div>
+          </div>
           <textarea
             aria-describedby="evaluation-label-summary-help"
             id="evaluation-label-summary"
             onChange={(event) => setLabelSummary(event.target.value)}
-            placeholder='{"true_positives": 0, "false_positives": 0, "false_negatives": 0, "onset_seconds": 0, "event_seconds": 0}'
+            placeholder='{"is_negative": true} OR {"true_positives": 1, "false_positives": 0, "false_negatives": 0, "onset_seconds": 2.0}'
+            rows={4}
             value={labelSummary}
           />
           <span className="muted" id="evaluation-label-summary-help">
-            Supply only values derived from an authorised labelled manifest. Leave empty when labels are unavailable.
+            {"Use `{\"is_negative\": true}` for negative clip FP testing, or supply labelled manifest metrics (`true_positives`, `onset_seconds`)."}
           </span>
-        </label>
+        </div>
 
         <label htmlFor="evaluation-notes">
           Notes (optional)
@@ -131,6 +182,43 @@ export function EvaluationPanel() {
       {message ? <p className={result ? "success-message" : "error-message"}>{message}</p> : null}
       {result ? (
         <pre aria-label="Returned source-supported evaluation metrics">{JSON.stringify(result.metrics, null, 2)}</pre>
+      ) : null}
+
+      {history.length > 0 ? (
+        <div style={{ marginTop: "1.5rem" }}>
+          <h3>Persisted Evaluation History</h3>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Runs</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Events / FPs</th>
+                  <th scope="col">Time-to-Detect</th>
+                  <th scope="col">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((item) => {
+                  const m = item.metrics ?? {};
+                  const fp = m.false_positive_count !== undefined && m.false_positive_count !== null ? String(m.false_positive_count) : "—";
+                  const ttd = m.time_to_detect_seconds !== undefined && m.time_to_detect_seconds !== null ? `${m.time_to_detect_seconds}s` : "—";
+                  return (
+                    <tr key={item.id}>
+                      <td>{item.name ?? item.id}</td>
+                      <td>{item.run_ids?.join(", ") ?? "—"}</td>
+                      <td>{String(m.status ?? "stored")}</td>
+                      <td>Events: {String(m.actual_event_count ?? 0)} | FPs: {fp}</td>
+                      <td>{ttd}</td>
+                      <td>{new Date(item.created_at).toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : null}
     </section>
   );

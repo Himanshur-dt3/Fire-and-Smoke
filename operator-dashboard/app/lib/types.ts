@@ -70,7 +70,11 @@ export interface UploadedMedia {
 
 export interface EvaluationResponse {
   id: string;
+  name?: string;
+  run_ids?: string[];
+  manifest_reference?: string | null;
   metrics: Record<string, unknown>;
+  notes?: string | null;
   created_at: string;
 }
 

@@ -6,7 +6,13 @@ The Renewi Fire & Smoke Detection proof of concept is a two-container applicatio
 
 This application is not a production fire alarm, a replacement for existing safety systems, or a live Renewi camera integration. It accepts authorised image and video uploads and can replay recorded video through the processing workflow. It does not connect to RTSP, VMS, NVR, or live CCTV feeds, and it does not establish Renewi-specific accuracy, false-alarm, low-light, retention-compliance, licence-clearance, or response-time claims.
 
-The application deliberately does not fabricate model output. When compatible model weights are unavailable, it continues to provide authenticated operational workflows while recording an explicit unavailable-model state rather than creating substitute detections, events, or evidence.
+### Model & Framework Licensing Summary
+- **D-Fire Weights/Model**: Licensed under MIT License.
+- **Pyronear YOLOv11s Weights/Model**: Licensed under Apache License 2.0.
+- **Ultralytics YOLO Engine**: Open-source dual-licensed under AGPL-3.0. Enterprise commercial licensing must be acquired before proprietary production deployment.
+- **Dataset Licensing**: License terms of training datasets must be explicitly verified and cleared prior to production use.
+
+The application deliberately does not fabricate model output. When compatible model weights are unavailable (such as Pyronear currently reporting `MODEL_NOT_CONFIGURED`), it continues to provide authenticated operational workflows while recording an explicit unavailable-model state rather than creating substitute detections, events, or evidence.
 
 ## Runtime architecture
 

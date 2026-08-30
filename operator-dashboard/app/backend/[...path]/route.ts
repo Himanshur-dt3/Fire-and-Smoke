@@ -88,13 +88,16 @@ async function proxyToBackend(request: NextRequest, context: ProxyRouteContext):
   }
 
   try {
+    const hasBody = request.method !== "GET" && request.method !== "HEAD";
+
     const upstreamResponse = await fetch(destination, {
       method: request.method,
       headers,
-      body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+      body: hasBody ? request.body : undefined,
       cache: "no-store",
-      redirect: "manual"
-    });
+      redirect: "manual",
+      ...(hasBody ? { duplex: "half" } : {})
+    } as RequestInit);
 
     const responseHeaders = new Headers();
     for (const headerName of FORWARDED_RESPONSE_HEADERS) {
@@ -112,3 +115,5 @@ async function proxyToBackend(request: NextRequest, context: ProxyRouteContext):
     return Response.json({ detail: "The dashboard backend connection is unavailable." }, { status: 503 });
   }
 }
+
+

@@ -33,7 +33,14 @@ Before making site-specific model claims, Renewi safety and data owners must als
 
 Before a site pilot or any production claim, the project must obtain footage-access authority and define privacy, retention, deletion, viewer permissions, operator response procedures, incident escalation, and security controls. It must validate site-specific model performance, false alarms, latency, weather and lighting effects, and night or low-light behaviour against authorised representative data.
 
-The project must resolve commercial licensing for Ultralytics, every selected model, weights, datasets, and any fine-tuned derivative. It must define target identity, deployment, persistence, backup, recovery, monitoring, and service ownership contracts. RTSP, VMS, or NVR integration must remain out of scope until network, cybersecurity, and operations approvals exist.
+The project must resolve commercial licensing for Ultralytics (AGPL-3.0 vs commercial license), every selected model (D-Fire MIT, Pyronear Apache 2.0), weights, datasets, and any fine-tuned derivative. It must define target identity, deployment, persistence, backup, recovery, monitoring, and service ownership contracts. RTSP, VMS, or NVR integration must remain out of scope until network, cybersecurity, and operations approvals exist.
+
+### Phase 2 Scope & Roadmap
+1. **Live Camera Stream Integration**: RTSP / ONVIF stream ingest into real-time processing pipelines.
+2. **Site & Edge Deployment**: On-premise deployment at Renewi recycling facilities (e.g. edge AI hardware or local processing servers).
+3. **Fine-Tuning on Renewi Facility Footage**: Training and fine-tuning models using site-specific Renewi waste stream footage (steam, dust, machinery exhaust, glare).
+4. **Night & Low-Light Testing**: Evaluating model accuracy under thermal/IR and low-light environmental conditions.
+5. **Pilot Hardening & VMS Integration**: Integration with existing site VMS/NVR alerting workflows and operator notification systems.
 
 SQLite and the in-process worker are suitable only for this bounded upload/replay POC. A pilot requiring restart-safe or multi-camera handling must use durable processing, managed persistence, appropriate backup and recovery controls, and an approved operational support model.
 

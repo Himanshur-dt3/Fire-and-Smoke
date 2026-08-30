@@ -41,6 +41,25 @@ export default function DashboardPage() {
     }
   }, [router]);
 
+
+  const refreshLatestRun = useCallback(async () => {
+    if (!latestRun) {
+      return;
+    }
+
+    try {
+      const run = await backendRequest<ProcessingRun>(
+        `/api/processing/runs/${latestRun.id}`
+      );
+
+      setLatestRun(run);
+    } catch (error) {
+      if (error instanceof BackendRequestError && error.status === 401) {
+        router.replace("/login");
+      }
+    }
+  }, [latestRun, router]);
+
   useEffect(() => {
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -69,6 +88,7 @@ export default function DashboardPage() {
       timer = setTimeout(async () => {
         if (document.visibilityState === "visible") {
           await loadSummary();
+          await refreshLatestRun();
         }
         scheduleRefresh();
       }, POLL_INTERVAL_MS);
@@ -83,7 +103,7 @@ export default function DashboardPage() {
         clearTimeout(timer);
       }
     };
-  }, [loadSummary, router]);
+  }, [loadSummary, refreshLatestRun, router]);
 
   async function handleLogout() {
     try {

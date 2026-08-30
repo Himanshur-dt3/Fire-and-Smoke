@@ -6,3 +6,5 @@ python-multipart>=0.0.20
 opencv-python-headless>=4.10.0
 numpy>=2.0.0
 ultralytics>=8.3.0
+
+itsdangerous>=2.2,<3

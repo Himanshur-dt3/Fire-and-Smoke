@@ -119,7 +119,7 @@ class ProcessingWorker:
                         best_by_label[prediction.label] = detection
 
                 for label in ("smoke", "fire"):
-                    trigger = engine.consider(db, media.camera_id, best_by_label.get(label))
+                    trigger = engine.consider(db, media.camera_id, label, best_by_label.get(label))
                     if not trigger:
                         continue
                     event = Event(

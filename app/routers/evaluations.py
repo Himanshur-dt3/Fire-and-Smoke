@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -12,6 +13,18 @@ from app.schemas import EvaluationCreateRequest
 from app.services.evaluation import EvaluationError, calculate_metrics
 
 router = APIRouter(prefix="/api/evaluations", tags=["Evaluation"])
+
+
+def _evaluation_dict(evaluation: EvaluationRun) -> dict:
+    return {
+        "id": evaluation.id,
+        "name": evaluation.name,
+        "run_ids": evaluation.run_ids,
+        "manifest_reference": evaluation.manifest_reference,
+        "metrics": evaluation.metrics,
+        "notes": evaluation.notes,
+        "created_at": evaluation.created_at,
+    }
 
 
 # PUBLIC_INTERFACE
@@ -29,7 +42,7 @@ def create_evaluation(
         db: Authenticated request database session.
 
     Returns:
-        The persisted evaluation identifier, metrics, and creation timestamp.
+        The persisted evaluation record with metrics and creation timestamp.
 
     Raises:
         HTTPException: If any selected run is absent, incomplete, or unsuitable for evaluation.
@@ -48,7 +61,27 @@ def create_evaluation(
     db.add(evaluation)
     db.commit()
     db.refresh(evaluation)
-    return {"id": evaluation.id, "metrics": evaluation.metrics, "created_at": evaluation.created_at}
+    return _evaluation_dict(evaluation)
+
+
+# PUBLIC_INTERFACE
+@router.get("", summary="List stored evaluation records")
+def list_evaluations(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> dict:
+    """Return stored evaluation history ordered by creation date.
+
+    Args:
+        limit: Maximum number of records to return.
+        db: Authenticated request database session.
+
+    Returns:
+        A list of persisted evaluation records.
+    """
+    evaluations = list(db.scalars(select(EvaluationRun).order_by(EvaluationRun.created_at.desc()).limit(limit)))
+    return {"items": [_evaluation_dict(item) for item in evaluations]}
 
 
 # PUBLIC_INTERFACE
@@ -73,12 +106,4 @@ def get_evaluation(
     evaluation = db.get(EvaluationRun, evaluation_id)
     if not evaluation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evaluation was not found.")
-    return {
-        "id": evaluation.id,
-        "name": evaluation.name,
-        "run_ids": evaluation.run_ids,
-        "manifest_reference": evaluation.manifest_reference,
-        "metrics": evaluation.metrics,
-        "notes": evaluation.notes,
-        "created_at": evaluation.created_at,
-    }
+    return _evaluation_dict(evaluation)

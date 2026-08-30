@@ -32,31 +32,42 @@ class DecisionEngine:
         self,
         db: Session,
         camera_id: str,
+        label: str,
         detection: Detection | None,
     ) -> Detection | None:
-        """Return a triggering detection only once a class reaches an eligible streak."""
-        label = detection.normalized_label if detection and detection.confidence >= self.threshold else None
-        for class_name, streak in self._streaks.items():
-            if class_name != label:
-                streak.count = 0
-                streak.best_detection = None
+        """Return a triggering detection once one class reaches an eligible streak.
 
-        if not label or detection is None:
+        Each class maintains its own persistence streak. A missing or
+        below-threshold detection resets only the streak for the class being
+        considered; it must not reset the other class.
+        """
+        if label not in self._streaks:
             return None
 
         streak = self._streaks[label]
+
+        if detection is None or detection.confidence < self.threshold:
+            streak.count = 0
+            streak.best_detection = None
+            return None
+
         streak.count += 1
+
         if not streak.best_detection or detection.confidence > streak.best_detection.confidence:
             streak.best_detection = detection
+
         if streak.count != self.persistence_frames:
             return None
 
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=self.cooldown_seconds)
+        event_type = "SMOKE_DETECTED" if label == "smoke" else "FIRE_DETECTED"
+
         recent = db.scalar(
             select(Event).where(
                 Event.camera_id == camera_id,
-                Event.event_type == ("SMOKE_DETECTED" if label == "smoke" else "FIRE_DETECTED"),
+                Event.event_type == event_type,
                 Event.triggered_at >= cutoff,
             )
         )
+
         return None if recent else streak.best_detection
