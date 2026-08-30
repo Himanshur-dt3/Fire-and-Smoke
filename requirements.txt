@@ -1,0 +1,8 @@
+fastapi==0.115.7
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.37
+pydantic==2.10.6
+python-multipart>=0.0.20
+opencv-python-headless>=4.10.0
+numpy>=2.0.0
+ultralytics>=8.3.0

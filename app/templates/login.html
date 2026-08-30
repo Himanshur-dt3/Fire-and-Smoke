@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Renewi Fire &amp; Smoke Monitor — Sign in</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body class="login-body">
+  <main class="login-card" aria-labelledby="login-title">
+    <p class="eyebrow">Renewi POC</p>
+    <h1 id="login-title">Fire &amp; Smoke Monitor</h1>
+    <p>Sign in to upload authorised media and review protected operational evidence.</p>
+    {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+    <form method="post" action="/auth/login">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Username<input name="username" autocomplete="username" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Sign in</button>
+    </form>
+    <p class="muted">POC only — not a production fire-alarm replacement.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,16 @@
+:root { color-scheme: dark; --bg:#07121f; --panel:#102235; --line:#24415b; --text:#edf6ff; --muted:#a7b8c9; --orange:#ff9d42; --red:#ff5d62; --green:#4bd39b; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+.topbar, main { max-width:1200px; margin:auto; padding:20px; }
+.topbar { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); }
+h1,h2,p { margin-top:0; } h1 { margin-bottom:0; } h2 { font-size:1.15rem; }
+.eyebrow { color:var(--orange); text-transform:uppercase; letter-spacing:.12em; font-size:.75rem; margin-bottom:2px; }
+main { display:grid; gap:18px; } .panel, .boundary, .metrics article, .login-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; }
+.boundary { border-left:4px solid var(--orange); } .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; } .metrics span { display:block; color:var(--muted); } .metrics strong { font-size:2rem; }
+form { display:grid; gap:12px; max-width:680px; } label { display:grid; gap:5px; color:var(--muted); } input,select,button { min-height:42px; border-radius:7px; border:1px solid var(--line); padding:8px 10px; font:inherit; }
+input,select { background:#07121f; color:var(--text); } button { cursor:pointer; background:var(--orange); color:#142030; border:0; font-weight:700; } button.secondary { background:transparent; border:1px solid var(--line); color:var(--text); }
+.checkbox { display:flex; align-items:center; gap:8px; } .muted { color:var(--muted); } .form-error { color:#ff9b9d; } .readiness,.cards { display:flex; flex-wrap:wrap; gap:10px; }
+.badge,.alert-card { border:1px solid var(--line); border-radius:8px; padding:10px; } .ready { color:var(--green); } .not-ready { color:var(--orange); } .alert-card { background:#18283a; min-width:220px; } .section-heading,.operator { display:flex; justify-content:space-between; align-items:center; gap:14px; }
+.table-wrap { overflow:auto; } table { border-collapse:collapse; width:100%; } th,td { border-bottom:1px solid var(--line); padding:10px; text-align:left; white-space:nowrap; } th { color:var(--muted); } .evidence-panel img { max-width:100%; border-radius:8px; border:1px solid var(--line); }
+.login-body { min-height:100vh; display:grid; place-items:center; padding:20px; } .login-card { max-width:440px; width:100%; }
+@media (max-width:700px) { .topbar,.section-heading,.operator { align-items:flex-start; flex-direction:column; } .metrics { grid-template-columns:repeat(2,1fr); } }

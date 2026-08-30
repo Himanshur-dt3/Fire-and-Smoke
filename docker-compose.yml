@@ -1,0 +1,71 @@
+services:
+  fire-smoke-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?APP_SECRET_KEY must be supplied at runtime}
+      OPERATOR_USERNAME: ${OPERATOR_USERNAME:?OPERATOR_USERNAME must be supplied at runtime}
+      OPERATOR_PASSWORD_HASH: ${OPERATOR_PASSWORD_HASH:?OPERATOR_PASSWORD_HASH must be supplied at runtime}
+      # Explicitly select the cookie policy: true behind HTTPS, false only for local HTTP development.
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:?SESSION_COOKIE_SECURE must be explicitly configured}
+      DATABASE_URL: sqlite:////app/runtime/fire_smoke.db
+      STORAGE_ROOT: /app/runtime/storage
+      D_FIRE_WEIGHTS_PATH: ${D_FIRE_WEIGHTS_PATH:-}
+      PYRONEAR_WEIGHTS_PATH: ${PYRONEAR_WEIGHTS_PATH:-}
+      MODEL_REGISTRY_JSON: ${MODEL_REGISTRY_JSON:-}
+    expose:
+      - "8000"
+    volumes:
+      # SQLite, uploads, and evidence are available only to the FastAPI service.
+      - fire-smoke-runtime:/app/runtime
+      # External model assets are never copied into an image and remain read-only.
+      - type: bind
+        source: ${MODEL_WEIGHTS_DIR:-./models}
+        target: /models
+        read_only: true
+    networks:
+      - private-api
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  operator-dashboard:
+    build:
+      context: ./operator-dashboard
+      dockerfile: Dockerfile
+    environment:
+      # This address is resolved only by the Next.js server-side proxy route.
+      BACKEND_INTERNAL_URL: http://fire-smoke-api:8000
+    depends_on:
+      fire-smoke-api:
+        condition: service_healthy
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    networks:
+      - public-dashboard
+      - private-api
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  fire-smoke-runtime:
+    name: fire-smoke-runtime
+
+networks:
+  public-dashboard:
+  private-api:
+    internal: true
