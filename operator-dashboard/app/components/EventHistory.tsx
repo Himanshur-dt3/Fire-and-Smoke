@@ -1,21 +1,22 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 
-import { BackendRequestError, backendRequest } from "../lib/backend";
+import { BackendRequestError, backendRequest, formatBackendTimestamp } from "../lib/backend";
 import type { DashboardEvent } from "../lib/types";
 
 interface EventHistoryProps {
   events: DashboardEvent[];
   onInspect: (event: DashboardEvent) => void;
   onAcknowledged: () => void;
+  onDeleted: () => void;
 }
 
 /**
  * PUBLIC_INTERFACE
  * Lists persisted events with local camera/type/state filters and sends CSRF-protected acknowledgements.
  */
-export function EventHistory({ events, onInspect, onAcknowledged }: EventHistoryProps) {
+export function EventHistory({ events, onInspect, onAcknowledged, onDeleted }: EventHistoryProps) {
   const [eventType, setEventType] = useState("");
   const [cameraFilter, setCameraFilter] = useState("");
   const [eventStatus, setEventStatus] = useState("");
@@ -34,6 +35,33 @@ export function EventHistory({ events, onInspect, onAcknowledged }: EventHistory
     [cameraFilter, eventStatus, eventType, events]
   );
 
+  async function deleteEvent(event: DashboardEvent) {
+    const confirmed = window.confirm(
+      `Delete this ${event.type.replace("_DETECTED", "").toLowerCase()} detection event? This cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await backendRequest<{ deleted: boolean }>(
+        `/api/events/${event.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      setMessage(`Event ${event.id} was deleted.`);
+      onDeleted();
+    } catch (error) {
+      setMessage(
+        error instanceof BackendRequestError
+          ? error.message
+          : "The event could not be deleted."
+      );
+    }
+  }
   async function acknowledge(event: DashboardEvent) {
     setMessage(null);
     try {
@@ -110,7 +138,7 @@ export function EventHistory({ events, onInspect, onAcknowledged }: EventHistory
             {filteredEvents.length > 0 ? (
               filteredEvents.map((event) => (
                 <tr key={event.id}>
-                  <td>{formatTimestamp(event.triggered_at)}</td>
+                  <td>{formatBackendTimestamp(event.triggered_at)}</td>
                   <td>{event.type}</td>
                   <td>{event.camera ?? event.camera_identifier ?? "Unavailable"}</td>
                   <td>{formatConfidence(event.confidence)}</td>
@@ -123,7 +151,14 @@ export function EventHistory({ events, onInspect, onAcknowledged }: EventHistory
                       <button onClick={() => void acknowledge(event)} type="button">
                         Acknowledge
                       </button>
-                    ) : null}
+                    ) : null}{" "}
+                    <button
+                      className="danger"
+                      onClick={() => void deleteEvent(event)}
+                      type="button"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))
@@ -141,11 +176,18 @@ export function EventHistory({ events, onInspect, onAcknowledged }: EventHistory
   );
 }
 
-function formatTimestamp(value: string): string {
-  const timestamp = new Date(value);
-  return Number.isNaN(timestamp.getTime()) ? "Unavailable" : timestamp.toLocaleString();
-}
-
 function formatConfidence(value: number): string {
   return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "Unavailable";
 }
+
+
+
+
+
+
+
+
+
+
+
+

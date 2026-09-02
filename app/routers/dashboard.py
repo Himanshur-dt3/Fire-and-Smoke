@@ -111,3 +111,17 @@ def sanitized_settings(_: User = Depends(get_current_user)) -> dict:
         "model_ids": sorted(app_state.inference.registry),
         "poc_boundary": "Authorized image/video upload and replay POC only; not a production fire-safety system.",
     }
+
+
+# PUBLIC_INTERFACE
+@router.get("/api/models/readiness", summary="Get model readiness state")
+def model_readiness(_: User = Depends(get_current_user)) -> dict:
+    """Return configured model readiness list for the operator dashboard.
+
+    Returns:
+        List of configured model identifiers and their readiness states.
+    """
+    from app.main import app_state
+
+    return {"items": app_state.inference.all_readiness()}
+

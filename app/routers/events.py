@@ -1,4 +1,4 @@
-"""Event history, acknowledgement, and protected evidence routes."""
+﻿"""Event history, acknowledgement, and protected evidence routes."""
 
 from __future__ import annotations
 
@@ -106,6 +106,39 @@ def get_event(
 
 
 # PUBLIC_INTERFACE
+
+@router.delete("/events/{event_id}", summary="Delete a persisted operational event")
+def delete_event(
+    event_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Delete one persisted event and its associated evidence record.
+
+    The raw Detection record is intentionally retained because detections
+    are stored separately from operational events.
+    """
+    event = db.get(Event, event_id)
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event was not found.",
+        )
+
+    evidence = event.evidence
+
+    if evidence:
+        db.delete(evidence)
+
+    db.delete(event)
+    db.commit()
+
+    return {
+        "deleted": True,
+        "event_id": event_id,
+    }
+
 @router.post("/events/{event_id}/acknowledge", summary="Acknowledge an operational event")
 def acknowledge_event(
     event_id: str,
@@ -170,3 +203,4 @@ def evidence_content(
     if not path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evidence content is unavailable.")
     return FileResponse(path, media_type=evidence.content_type, filename=f"evidence-{evidence.id}.jpg")
+

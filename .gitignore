@@ -14,3 +14,14 @@ models/
 *.engine
 *.db
 .DS_Store
+
+# Local backups and generated artifacts
+*.bak
+*.backup
+*.broken
+runtime_backup_*/
+runs/
+pyro-train/
+
+.env.backup*
+operator-dashboard/app/page.tsx.backup-*

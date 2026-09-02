@@ -1,4 +1,4 @@
-services:
+﻿services:
   fire-smoke-api:
     build:
       context: .
@@ -14,8 +14,8 @@ services:
       D_FIRE_WEIGHTS_PATH: ${D_FIRE_WEIGHTS_PATH:-}
       PYRONEAR_WEIGHTS_PATH: ${PYRONEAR_WEIGHTS_PATH:-}
       MODEL_REGISTRY_JSON: ${MODEL_REGISTRY_JSON:-}
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     volumes:
       # SQLite, uploads, and evidence are available only to the FastAPI service.
       - fire-smoke-runtime:/app/runtime
@@ -26,6 +26,7 @@ services:
         read_only: true
     networks:
       - private-api
+      - public-dashboard
     healthcheck:
       test:
         [
@@ -69,3 +70,9 @@ networks:
   public-dashboard:
   private-api:
     internal: true
+
+
+
+
+
+

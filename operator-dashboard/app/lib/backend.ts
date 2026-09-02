@@ -1,4 +1,4 @@
-import type { SessionState } from "./types";
+﻿import type { SessionState } from "./types";
 
 const BACKEND_PREFIX = "/backend";
 
@@ -156,3 +156,46 @@ function errorMessage(payload: unknown): string {
 
   return "The requested backend operation could not be completed.";
 }
+/**
+ * Converts backend UTC timestamps to the user's local timezone.
+ * Backend timestamps are stored as UTC without an explicit timezone suffix.
+ */
+export function formatBackendTimestamp(value: string): string {
+  const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`;
+
+  return new Date(normalized).toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+}
+
+/**
+ * Converts backend UTC timestamps to local time only.
+ */
+export function formatBackendTime(timestamp: string): string {
+  const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(timestamp)
+    ? timestamp
+    : `${timestamp}Z`;
+
+  return new Date(normalized).toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+}
+/**
+ * Formats backend timestamps consistently in India Standard Time.
+ * Backend timestamps without an explicit timezone are treated as UTC.
+ */
+
+
+
+

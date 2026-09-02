@@ -1,4 +1,4 @@
-"""Operational event decisioning distinct from raw model predictions."""
+﻿"""Confidence, persistence, and cooldown decision logic."""
 
 from __future__ import annotations
 
@@ -13,34 +13,38 @@ from app.models import Detection, Event
 
 @dataclass
 class _Streak:
-    """In-memory consecutive qualifying state for one class during a run."""
+    """Consecutive qualifying detections for one class during a run."""
 
     count: int = 0
     best_detection: Detection | None = None
 
 
 class DecisionEngine:
-    """Apply threshold, temporal persistence, and cooldown before alert creation."""
+    """Apply confidence threshold, temporal persistence, and cooldown."""
 
-    def __init__(self, threshold: float, persistence_frames: int, cooldown_seconds: int) -> None:
+    def __init__(
+        self,
+        threshold: float,
+        persistence_frames: int,
+        cooldown_seconds: int,
+    ) -> None:
         self.threshold = threshold
-        self.persistence_frames = persistence_frames
-        self.cooldown_seconds = cooldown_seconds
-        self._streaks: dict[str, _Streak] = {"smoke": _Streak(), "fire": _Streak()}
+        self.persistence_frames = max(1, persistence_frames)
+        self.cooldown_seconds = max(0, cooldown_seconds)
+        self._streaks: dict[str, _Streak] = {
+            "smoke": _Streak(),
+            "fire": _Streak(),
+        }
 
     def consider(
         self,
         db: Session,
-        camera_id: str,
+        camera_id: str | None,
         label: str,
         detection: Detection | None,
     ) -> Detection | None:
-        """Return a triggering detection once one class reaches an eligible streak.
+        """Return a real detection when the configured decision rules pass."""
 
-        Each class maintains its own persistence streak. A missing or
-        below-threshold detection resets only the streak for the class being
-        considered; it must not reset the other class.
-        """
         if label not in self._streaks:
             return None
 
@@ -53,21 +57,42 @@ class DecisionEngine:
 
         streak.count += 1
 
-        if not streak.best_detection or detection.confidence > streak.best_detection.confidence:
+        if (
+            streak.best_detection is None
+            or detection.confidence > streak.best_detection.confidence
+        ):
             streak.best_detection = detection
 
-        if streak.count != self.persistence_frames:
+        if streak.count < self.persistence_frames:
             return None
 
-        cutoff = datetime.now(timezone.utc) - timedelta(seconds=self.cooldown_seconds)
-        event_type = "SMOKE_DETECTED" if label == "smoke" else "FIRE_DETECTED"
-
-        recent = db.scalar(
-            select(Event).where(
-                Event.camera_id == camera_id,
-                Event.event_type == event_type,
-                Event.triggered_at >= cutoff,
-            )
+        event_type = (
+            "SMOKE_DETECTED"
+            if label == "smoke"
+            else "FIRE_DETECTED"
         )
 
-        return None if recent else streak.best_detection
+        cutoff = datetime.now(timezone.utc) - timedelta(
+            seconds=self.cooldown_seconds
+        )
+
+        recent_query = select(Event).where(
+            Event.event_type == event_type,
+            Event.triggered_at >= cutoff,
+        )
+
+        if camera_id is not None:
+            recent_query = recent_query.where(Event.camera_id == camera_id)
+
+        recent = db.scalar(recent_query.limit(1))
+
+        trigger = streak.best_detection
+
+        # Reset the streak after a decision has been emitted.
+        streak.count = 0
+        streak.best_detection = None
+
+        if recent:
+            return None
+
+        return trigger

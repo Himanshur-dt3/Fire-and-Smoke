@@ -95,7 +95,7 @@ export function UploadPanel({ models, onRunCreated }: UploadPanelProps) {
         <label htmlFor="media-file">
           Image or video
           <input
-            accept="image/jpeg,image/png,video/mp4,video/quicktime,video/x-msvideo"
+            accept="image/jpeg,image/png,video/mp4,video/quicktime,video/x-msvideo,.avi"
             id="media-file"
             onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
             required
@@ -142,3 +142,4 @@ export function UploadPanel({ models, onRunCreated }: UploadPanelProps) {
     </section>
   );
 }
+

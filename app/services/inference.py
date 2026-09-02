@@ -107,8 +107,19 @@ class InferenceService:
         model = self._load(model_id)
         metadata = self.registry[model_id]
         aliases = {str(key).lower(): str(value).lower() for key, value in dict(metadata["labels"]).items()}
+        # Pyronear is a single-class smoke detector and its useful
+        # detections are intentionally below Ultralytics' default conf=0.25.
+        # The application-level DecisionEngine performs the actual
+        # confidence filtering, so inference must retain low-confidence
+        # candidates for models that require it.
+        inference_confidence = float(metadata.get("inference_confidence", 0.25))
+
         try:
-            results = model.predict(source=image, verbose=False)
+            results = model.predict(
+                source=image,
+                conf=inference_confidence,
+                verbose=False,
+            )
         except Exception as error:
             raise ModelUnavailableError("Real model inference failed for the supplied frame.") from error
 

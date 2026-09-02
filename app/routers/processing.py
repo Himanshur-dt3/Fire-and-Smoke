@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies import get_current_user, require_csrf
-from app.models import MediaAsset, ProcessingRun, User
+from app.models import Detection, Event, MediaAsset, ProcessingRun, User
 from app.schemas import RunCreateRequest
 from app.services.inference import MODEL_READY
 
@@ -91,6 +92,63 @@ def create_run(
 
 
 # PUBLIC_INTERFACE
+@router.get("/runs/{run_id}/results", summary="Get persisted inference results for a processing run")
+def get_run_results(
+    run_id: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> dict:
+    """Return persisted detections and events for one completed processing run."""
+    run = db.get(ProcessingRun, run_id)
+    if not run:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Processing run was not found.")
+
+    detections = list(
+        db.scalars(
+            select(Detection)
+            .where(Detection.run_id == run_id)
+            .order_by(Detection.confidence.desc())
+            .limit(50)
+        )
+    )
+
+    events = list(
+        db.scalars(
+            select(Event)
+            .where(Event.run_id == run_id)
+            .order_by(Event.triggered_at.desc())
+        )
+    )
+
+    return {
+        "run_id": run.id,
+        "status": run.status,
+        "detection_count": db.query(Detection).filter(Detection.run_id == run_id).count(),
+        "event_count": len(events),
+        "detections": [
+            {
+                "id": detection.id,
+                "label": detection.normalized_label,
+                "confidence": detection.confidence,
+                "frame_number": detection.frame_number,
+                "frame_timestamp": detection.frame_timestamp,
+                "bounding_box": detection.bounding_box,
+            }
+            for detection in detections
+        ],
+        "events": [
+            {
+                "id": event.id,
+                "type": event.event_type,
+                "confidence": event.confidence,
+                "status": event.status,
+            }
+            for event in events
+        ],
+    }
+
+
+# PUBLIC_INTERFACE
 @router.get("/runs/{run_id}", summary="Get processing run state")
 def get_run(
     run_id: str,
@@ -113,3 +171,24 @@ def get_run(
     if not run:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Processing run was not found.")
     return _run_dict(run)
+
+
+# PUBLIC_INTERFACE
+@router.get("/runs", summary="List processing attempts")
+def list_runs(
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> dict:
+    """List authenticated processing runs.
+
+    Args:
+        limit: Maximum number of newest runs to return.
+        db: Authenticated request database session.
+
+    Returns:
+        A JSON object containing processing run summaries.
+    """
+    runs = list(db.scalars(select(ProcessingRun).order_by(ProcessingRun.created_at.desc()).limit(limit)))
+    return {"items": [_run_dict(run) for run in runs]}
+

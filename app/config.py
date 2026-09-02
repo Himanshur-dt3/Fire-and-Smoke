@@ -133,7 +133,30 @@ class Settings:
             },
             "pyronear": {
                 "weights_path": self.pyronear_weights_path,
-                "labels": {"smoke": "smoke", "fire": "fire", "flame": "fire"},
+
+                # Pyronear's YOLO detector is a single-class smoke detector.
+                # Its trained class is exposed by Ultralytics as "item".
+                # Normalize that class to the application's canonical "smoke".
+                "labels": {
+                    "item": "smoke",
+                    "smoke": "smoke",
+                },
+
+                # Do not let Ultralytics' default conf=0.25 discard the
+                # low-confidence Pyronear candidates before the application
+                # decision layer sees them.
+                "inference_confidence": 0.01,
+
+                # Pyronear needs a model-specific operating threshold.
+                # The supplied test video produced useful candidates around
+                # 0.02-0.26, while the global D-Fire threshold is 0.50.
+                "confidence_threshold": 0.02,
+
+                # The supplied video does not reliably contain 3 consecutive
+                # qualifying 1-FPS samples. The POC should therefore surface
+                # an actual Pyronear detection immediately.
+                "persistence_frames": 1,
+
                 "license_note": "Verify Pyronear model and dataset licensing before production.",
             },
         }

@@ -1,29 +1,21 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
-
+﻿import type { Metadata } from "next";
 import "./globals.css";
+import AppShell from "./AppShell";
 
 export const metadata: Metadata = {
   title: "Renewi Fire & Smoke Monitor",
-  description: "Operator dashboard for authorized Fire & Smoke Detection POC media workflows."
+  description: "Renewi Fire & Smoke Operations Console"
 };
 
-interface RootLayoutProps {
-  children: ReactNode;
-}
-
-/**
- * PUBLIC_INTERFACE
- * Provides the document structure and shared visual context for the operator dashboard.
- */
-export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
+export default function RootLayout({
+  children
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
       <body>
-        <a className="skip-link" href="#main-content">
-          Skip to dashboard content
-        </a>
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

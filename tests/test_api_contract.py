@@ -156,3 +156,27 @@ def test_model_registry_metadata_cannot_override_weight_paths(monkeypatch: pytes
     assert registry["dfire"]["weights_path"] == "/configured/dfire.pt"
     assert registry["dfire"]["labels"] == {"smoke plume": "smoke", "flame": "fire"}
     assert registry["dfire"]["license_note"] == "Configured label metadata"
+
+
+def test_models_readiness_endpoint(client: TestClient) -> None:
+    """The API returns model readiness list for dashboard monitoring."""
+    _login(client)
+    response = client.get("/api/models/readiness")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert isinstance(data["items"], list)
+    model_ids = [item["model_id"] for item in data["items"]]
+    assert "dfire" in model_ids
+    assert "pyronear" in model_ids
+
+
+def test_list_processing_runs_endpoint(client: TestClient) -> None:
+    """The API lists processing runs for operator tracking."""
+    _login(client)
+    response = client.get("/api/processing/runs")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert isinstance(data["items"], list)
+
