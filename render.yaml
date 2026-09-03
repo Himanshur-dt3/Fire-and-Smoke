@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: fire-and-smoke-dashboard
+    runtime: docker
+    region: singapore
+    plan: free
+    dockerfilePath: ./operator-dashboard/Dockerfile
+    envVars:
+      - key: BACKEND_INTERNAL_URL
+        fromService:
+          type: pserv
+          name: fire-and-smoke-api
+          property: hostport
+
+  - type: pserv
+    name: fire-and-smoke-api
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: ./Dockerfile
+
+    envVars:
+      - key: APP_SECRET_KEY
+        sync: false
+
+      - key: OPERATOR_USERNAME
+        sync: false
+
+      - key: OPERATOR_PASSWORD_HASH
+        sync: false
+
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+
+      - key: DATABASE_URL
+        value: "sqlite:////app/runtime/fire_smoke.db"
+
+      - key: STORAGE_ROOT
+        value: "/app/runtime/storage"
+
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.50"
+
+      - key: PERSISTENCE_FRAMES
+        value: "3"
+
+      - key: SAMPLE_FPS
+        value: "1.0"
+
+      - key: EVENT_COOLDOWN_SECONDS
+        value: "60"
+
+    disk:
+      name: fire-and-smoke-runtime
+      mountPath: /app/runtime
+      sizeGB: 1
