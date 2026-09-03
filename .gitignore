@@ -25,3 +25,7 @@ pyro-train/
 
 .env.backup*
 operator-dashboard/app/page.tsx.backup-*
+
+# Enterprise UI backup snapshots
+*.before-enterprise-ui
+
