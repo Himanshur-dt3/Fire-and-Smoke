@@ -11,7 +11,6 @@ const navigation = [
   { href: "/processing", label: "Processing", icon: "⚙", section: "OPERATIONS" },
   { href: "/models", label: "Models", icon: "◆", section: "ANALYTICS" },
   { href: "/settings", label: "Settings", icon: "⚙", section: "SYSTEM" },
-  { href: "/evaluation", label: "Evaluation", icon: "✓", section: "ANALYTICS" }
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {

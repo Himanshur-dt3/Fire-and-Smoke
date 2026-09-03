@@ -1,4 +1,4 @@
-﻿services:
+services:
   fire-smoke-api:
     build:
       context: .
@@ -14,6 +14,10 @@
       D_FIRE_WEIGHTS_PATH: ${D_FIRE_WEIGHTS_PATH:-}
       PYRONEAR_WEIGHTS_PATH: ${PYRONEAR_WEIGHTS_PATH:-}
       MODEL_REGISTRY_JSON: ${MODEL_REGISTRY_JSON:-}
+      CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.50}
+      PERSISTENCE_FRAMES: ${PERSISTENCE_FRAMES:-3}
+      SAMPLE_FPS: ${SAMPLE_FPS:-1.0}
+      EVENT_COOLDOWN_SECONDS: ${EVENT_COOLDOWN_SECONDS:-60}
     ports:
       - "8000:8000"
     volumes:
@@ -70,6 +74,8 @@ networks:
   public-dashboard:
   private-api:
     internal: true
+
+
 
 
 
