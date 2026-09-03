@@ -10,3 +10,5 @@ models
 *.db
 .git
 kavia-docs
+!models/
+!models/*.pt
