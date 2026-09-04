@@ -8,8 +8,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 runtime/
-models/
-*.pt
 *.onnx
 *.engine
 *.db
