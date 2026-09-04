@@ -23,11 +23,6 @@ services:
     volumes:
       # SQLite, uploads, and evidence are available only to the FastAPI service.
       - fire-smoke-runtime:/app/runtime
-      # External model assets are never copied into an image and remain read-only.
-      - type: bind
-        source: ${MODEL_WEIGHTS_DIR:-./models}
-        target: /models
-        read_only: true
     networks:
       - private-api
       - public-dashboard
@@ -74,6 +69,7 @@ networks:
   public-dashboard:
   private-api:
     internal: true
+
 
 
 
